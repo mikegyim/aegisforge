@@ -1,0 +1,14 @@
+{
+  "event_id": "evt-001",
+  "event_type": "observability",
+  "cluster": "dev-us-east-1",
+  "namespace": "ci",
+  "workload": "gitlab-runner",
+  "severity": "critical",
+  "signal": "node_memory_pressure",
+  "message": "Node memory pressure detected after CI workload spike",
+  "metadata": {
+    "node": "ip-10-0-1-10",
+    "metric": "container_memory_working_set_bytes"
+  }
+}

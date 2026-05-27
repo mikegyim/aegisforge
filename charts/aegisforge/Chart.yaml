@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aegisforge
+description: Autonomous AI cloud operations and defense platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aegisforge-api
+  labels:
+    app: aegisforge-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aegisforge-api
+  template:
+    metadata:
+      labels:
+        app: aegisforge-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/mikegyim/aegisforge:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ENVIRONMENT
+              value: dev
+            - name: LLM_PROVIDER
+              value: mock
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10

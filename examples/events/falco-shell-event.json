@@ -1,0 +1,14 @@
+{
+  "event_id": "evt-sec-001",
+  "event_type": "security",
+  "cluster": "prod-us-east-1",
+  "namespace": "payments",
+  "workload": "api-server",
+  "severity": "critical",
+  "signal": "unexpected_shell_in_container",
+  "message": "Falco detected an interactive shell inside a production container",
+  "metadata": {
+    "rule": "Terminal shell in container",
+    "user": "root"
+  }
+}

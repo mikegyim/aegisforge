@@ -1,0 +1,8 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: local
+      LLM_PROVIDER: mock

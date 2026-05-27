@@ -1,0 +1,14 @@
+image:
+  repository: ghcr.io/mikegyim/aegisforge
+  tag: latest
+  pullPolicy: Always
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 80
+
+env:
+  ENVIRONMENT: dev
+  LLM_PROVIDER: mock
