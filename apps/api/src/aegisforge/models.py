@@ -2,24 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     info = "info"
     warning = "warning"
     critical = "critical"
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     observability = "observability"
     security = "security"
     cost = "cost"

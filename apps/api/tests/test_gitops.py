@@ -22,8 +22,16 @@ def _analysis() -> IncidentAnalysis:
         signal="node_memory_pressure",
         message="OOM event",
     )
-    findings = [AgentFinding(agent="observability-agent", summary="ok",
-                             confidence=0.8, evidence=["OOM event"], risk_score=85, tags=["memory"])]
+    findings = [
+        AgentFinding(
+            agent="observability-agent",
+            summary="ok",
+            confidence=0.8,
+            evidence=["OOM event"],
+            risk_score=85,
+            tags=["memory"],
+        )
+    ]
     plan = RemediationPlan(
         title="Raise memory limits",
         risk="medium",

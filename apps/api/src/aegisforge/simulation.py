@@ -40,7 +40,7 @@ class ClusterGraph:
     deployments: list[Deployment]
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "ClusterGraph":
+    def from_yaml(cls, path: Path) -> ClusterGraph:
         if not path.exists():
             return cls.default()
         data = yaml.safe_load(path.read_text())
@@ -51,7 +51,7 @@ class ClusterGraph:
         )
 
     @classmethod
-    def default(cls) -> "ClusterGraph":
+    def default(cls) -> ClusterGraph:
         return cls(
             cluster="dev-us-east-1",
             namespaces=["default", "ci", "platform"],

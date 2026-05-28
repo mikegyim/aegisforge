@@ -26,12 +26,16 @@ class RemediationPlanner:
     ) -> RemediationPlan:
         findings = findings or []
         security_risk = any(
-            "security" in f.tags or f.risk_score >= 80 and f.agent == "security-agent"
+            "security" in f.tags or (f.risk_score >= 80 and f.agent == "security-agent")
             for f in findings
         )
         text = event.signal + " " + event.message
 
-        if event.event_type == EventType.security or security_risk or _SECURITY_KEYWORDS.search(text):
+        if (
+            event.event_type == EventType.security
+            or security_risk
+            or _SECURITY_KEYWORDS.search(text)
+        ):
             return self._security_quarantine(event)
 
         if event.severity == Severity.critical and _MEMORY_KEYWORDS.search(text):
@@ -137,8 +141,14 @@ class RemediationPlanner:
             title="Open investigation with recommended diagnostic commands",
             risk="low",
             actions=[
-                f"kubectl -n {event.namespace or 'default'} describe pod {event.workload or '<workload>'}",
-                f"kubectl -n {event.namespace or 'default'} logs {event.workload or '<workload>'} --tail=200",
+                (
+                    f"kubectl -n {event.namespace or 'default'} "
+                    f"describe pod {event.workload or '<workload>'}"
+                ),
+                (
+                    f"kubectl -n {event.namespace or 'default'} "
+                    f"logs {event.workload or '<workload>'} --tail=200"
+                ),
                 "Check Prometheus metrics for the workload",
                 "Compare against historical incident memory",
             ],

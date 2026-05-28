@@ -168,4 +168,5 @@ async def propose_pull_request(
         proposal.url = gh.open_pull_request(proposal)
     except Exception as exc:
         log.exception("failed to open PR, returning proposal only: %s", exc)
-        proposal.url = f
+        proposal.url = f"error://{exc}"
+    return proposal
