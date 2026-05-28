@@ -1,12 +1,19 @@
-# Kubernetes Digital Twin Simulation
+# Digital twin notes
 
-The first version of the simulator is deterministic and rule-based.
+The twin is a small declarative graph (`digital_twin.yaml`) loaded at startup.
+It captures the cluster topology that matters for blast-radius reasoning:
 
-Future expansion:
+- which namespaces exist
+- which deployments live in them
+- replica counts, PDB presence, resource-limit presence
+- the directed `serves` edges (callers of a downstream service)
 
-1. Import cluster topology from Kubernetes API
-2. Model node capacity and pod scheduling
-3. Simulate remediation actions before GitOps PR generation
-4. Estimate blast radius
-5. Score remediation risk
-6. Store simulation results in incident memory
+The simulator uses the graph to:
+
+1. classify blast radius (none / workload / namespace / cluster)
+2. pre-check policy violations that mirror the OPA rules
+3. score a deterministic risk integer the API can return on `/events`
+
+For production deployments, the graph would be replaced by a live snapshot
+fetched from the Kubernetes API and refreshed periodically. The interface is
+the same; only the loader changes.

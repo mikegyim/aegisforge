@@ -2,32 +2,78 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: aegisforge-api
-  labels:
-    app: aegisforge-api
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: aegisforge-api
+      app.kubernetes.io/name: aegisforge
+      app.kubernetes.io/component: api
   template:
     metadata:
       labels:
-        app: aegisforge-api
+        app.kubernetes.io/name: aegisforge
+        app.kubernetes.io/component: api
     spec:
+      serviceAccountName: aegisforge
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
       containers:
         - name: api
-          image: ghcr.io/mikegyim/aegisforge:latest
-          imagePullPolicy: Always
+          image: ghcr.io/mikegyim/aegisforge:0.2.0
           ports:
-            - containerPort: 8000
+            - name: http
+              containerPort: 8000
           env:
-            - name: ENVIRONMENT
-              value: dev
-            - name: LLM_PROVIDER
-              value: mock
+            - name: AEGIS_ENVIRONMENT
+              value: prod
+            - name: AEGIS_LOG_JSON
+              value: "true"
+            - name: AEGIS_LLM_PROVIDER
+              value: anthropic
+            - name: AEGIS_GITHUB_DRY_RUN
+              value: "true"
+            - name: AEGIS_ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aegisforge-secrets
+                  key: anthropic_api_key
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          emptyDir: {}

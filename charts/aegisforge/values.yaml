@@ -1,14 +1,86 @@
+replicaCount: 2
+
 image:
   repository: ghcr.io/mikegyim/aegisforge
-  tag: latest
-  pullPolicy: Always
+  tag: "0.2.0"
+  pullPolicy: IfNotPresent
 
-replicaCount: 2
+imagePullSecrets: []
 
 service:
   type: ClusterIP
   port: 80
+  targetPort: 8000
 
+ingress:
+  enabled: false
+  className: nginx
+  hosts:
+    - host: aegisforge.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+
+probes:
+  liveness:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 20
+  readiness:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+
+# Env passed through to the API
 env:
-  ENVIRONMENT: dev
-  LLM_PROVIDER: mock
+  AEGIS_ENVIRONMENT: prod
+  AEGIS_LOG_JSON: "true"
+  AEGIS_LLM_PROVIDER: anthropic
+  AEGIS_LLM_MODEL: claude-sonnet-4-6
+  AEGIS_GITHUB_DRY_RUN: "true"
+  AEGIS_ENABLE_METRICS: "true"
+
+# Secrets are mounted as env vars from this secret (must be created out-of-band)
+existingSecret: aegisforge-secrets

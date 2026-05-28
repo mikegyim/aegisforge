@@ -1,0 +1,11 @@
+{
+  "event_id": "evt-cost-001",
+  "event_type": "cost",
+  "cluster": "dev-us-east-1",
+  "namespace": "platform",
+  "workload": "auth",
+  "severity": "warning",
+  "signal": "cost_anomaly",
+  "message": "Daily cost for auth deployment exceeded budget by 38%",
+  "metadata": {"source": "kubecost"}
+}

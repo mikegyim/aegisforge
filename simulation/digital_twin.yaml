@@ -1,0 +1,37 @@
+cluster: dev-us-east-1
+namespaces:
+  - default
+  - ci
+  - platform
+  - observability
+deployments:
+  - name: gitlab-runner
+    namespace: ci
+    replicas: 3
+    has_pdb: false
+    has_resource_limits: false
+    serves: []
+  - name: api-gateway
+    namespace: platform
+    replicas: 2
+    has_pdb: true
+    has_resource_limits: true
+    serves: ["auth", "billing"]
+  - name: auth
+    namespace: platform
+    replicas: 2
+    has_pdb: true
+    has_resource_limits: true
+    serves: []
+  - name: billing
+    namespace: platform
+    replicas: 2
+    has_pdb: true
+    has_resource_limits: true
+    serves: []
+  - name: prometheus
+    namespace: observability
+    replicas: 1
+    has_pdb: false
+    has_resource_limits: true
+    serves: []

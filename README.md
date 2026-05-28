@@ -1,237 +1,208 @@
-
 # AegisForge
 
 ![CI](https://github.com/mikegyim/aegisforge/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688)
+![Kubernetes](https://img.shields.io/badge/kubernetes-ready-326CE5)
+![Helm](https://img.shields.io/badge/helm-3.x-0F1689)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-7B42BC)
 ![License](https://img.shields.io/badge/license-MIT-yellow)
-![Kubernetes](https://img.shields.io/badge/kubernetes-ready-blue)
-![Terraform](https://img.shields.io/badge/Terraform-IaC-purple)
-![AI](https://img.shields.io/badge/GenAI-Agents-red)
 
-AegisForge is an autonomous AI cloud operations and defense platform that combines Kubernetes platform engineering, AI agents, DevSecOps automation, infrastructure simulation, and GitOps remediation workflows into a unified cloud-native control plane.
+**AegisForge** turns infrastructure events into reviewable, simulated,
+policy-checked GitOps changes - with humans on the merge button. It is an
+opinionated reference architecture for AI-assisted SRE / DevSecOps that runs
+end-to-end out of the box.
 
-Built by **Michael Opoku-Gyimah** / GitHub: [`mikegyim`](https://github.com/mikegyim)
-
-Built as a portfolio demonstration of:
-
-- AI infrastructure engineering
-- Distributed systems
-- Kubernetes platform operations
-- DevSecOps automation
-- Cloud-native architecture
-- Autonomous remediation systems
-- GitOps workflows
-- AI-assisted incident response
+Built by **Michael Opoku-Gyimah** — GitHub: [`mikegyim`](https://github.com/mikegyim)
 
 ---
 
-# What This Project Demonstrates
+## What it actually does
 
-| Capability | Where in the Code |
-|---|---|
-| FastAPI AI control plane | `apps/api/src/aegisforge/main.py` |
-| Multi-agent orchestration | `apps/api/src/aegisforge/agents.py` |
-| AI reasoning engine | `apps/api/src/aegisforge/ai.py` |
-| Autonomous remediation planning | `apps/api/src/aegisforge/remediation.py` |
-| Kubernetes digital twin simulation | `apps/api/src/aegisforge/simulation.py` |
-| GitHub Actions CI/CD | `.github/workflows/ci.yml` |
-| Terraform infrastructure provisioning | `infra/terraform/` |
-| Kubernetes manifests | `infra/kubernetes/` |
-| Helm packaging | `charts/aegisforge/` |
-| Security policy enforcement | `security/policies/` |
-| Event-driven AI workers | `apps/agents/` |
-| Infrastructure simulation engine | `simulation/` |
+1. Accepts an `InfrastructureEvent` on `POST /events`
+2. Runs four concurrent inspection agents (observability, security, governance, cost)
+3. Synthesizes a `RemediationPlan` (structured, with rollback + GitOps patch)
+4. Simulates the plan against a `DigitalTwin` cluster graph (blast radius + OPA pre-check)
+5. Calls a real LLM (Anthropic / OpenAI / mock fallback) to produce the executive summary and root-cause hypothesis grounded in the agent evidence and any prior similar incidents
+6. Persists the analysis in SQLite with token-overlap similarity search
+7. On request, opens a **draft GitHub pull request** with the Helm values diff via PyGithub - or a dry-run proposal when running locally
+8. Exposes Prometheus metrics, structured JSON logs, and optional OpenTelemetry traces
+
+Nothing mutates a cluster until a human merges the PR. `enable_autonomous_actions` is `false` by default and the simulator blocks plans that would fail the OPA policy.
 
 ---
 
-# Core Features
+## Capabilities and where to find them
 
-- Real-time infrastructure event ingestion
-- AI-powered incident analysis and summarization
-- Policy-aware remediation planning
-- Autonomous GitOps remediation proposal generation
-- Security event classification
-- Kubernetes digital twin simulation
-- Prometheus/Grafana-ready metrics endpoints
-- REST API built with FastAPI
-- AI agent framework for observability, governance, security, and remediation
-- Docker, Kubernetes, Helm, Terraform, and GitHub Actions integration
-
----
-
-# Production Features
-
-- Async FastAPI APIs
-- Kubernetes-native deployment model
-- Helm packaging
-- Terraform Infrastructure-as-Code
-- GitHub Actions CI/CD
-- AI-driven remediation workflows
-- GitOps-oriented deployment strategy
-- Policy-aware infrastructure automation
-- Simulation-based safety validation
-- Security event classification
-- Cloud-native architecture patterns
+| Capability                            | Where in the code                                      |
+| ------------------------------------- | ------------------------------------------------------ |
+| FastAPI control plane                 | `apps/api/src/aegisforge/main.py`                      |
+| Multi-agent inspection                | `apps/api/src/aegisforge/agents.py`                    |
+| Real LLM reasoning (with fallback)    | `apps/api/src/aegisforge/{llm,ai}.py`                  |
+| Remediation plan + Helm values diff   | `apps/api/src/aegisforge/remediation.py`               |
+| Digital twin simulator (graph-based)  | `apps/api/src/aegisforge/simulation.py`                |
+| SQLite incident memory + similarity   | `apps/api/src/aegisforge/memory.py`                    |
+| GitHub draft PR generation            | `apps/api/src/aegisforge/gitops.py`                    |
+| API-key auth, rate limit, headers     | `apps/api/src/aegisforge/security.py`                  |
+| Prometheus metrics + OTLP tracing     | `apps/api/src/aegisforge/observability.py`             |
+| Event-driven background worker        | `apps/agents/src/aegisforge_agents/{queue,worker}.py`  |
+| Dashboard (Vite + React)              | `apps/frontend/src/main.jsx`                           |
+| Helm chart (HPA, PDB, NetworkPolicy)  | `charts/aegisforge/`                                   |
+| Kustomize base + dev/prod overlays    | `infra/kubernetes/`                                    |
+| Terraform: VPC + EKS + IRSA + ECR     | `infra/terraform/aws/`                                 |
+| OPA admission policy                  | `security/policies/`                                   |
+| CI: ruff, bandit, pytest, trivy, helm | `.github/workflows/ci.yml`                             |
 
 ---
 
-# Architecture
+## Architecture
 
 ```mermaid
 flowchart LR
-    A[Prometheus Alerts] --> B[FastAPI Control Plane]
-    C[Falco Events] --> B
-    D[Kubernetes Events] --> B
-    E[Terraform Drift Signals] --> B
+    A[Prometheus / Alertmanager] --> W[Event worker]
+    B[Falco] --> W
+    C[Kubernetes events] --> W
+    D[Cost / kubecost] --> W
 
-    B --> F[Agent Router]
+    W --> API[FastAPI control plane]
 
-    F --> G[Observability Agent]
-    F --> H[Security Agent]
-    F --> I[Governance Agent]
-    F --> J[Remediation Agent]
+    API --> R[Agent Router]
+    R --> O[Observability]
+    R --> S[Security]
+    R --> G[Governance]
+    R --> CO[Cost]
 
-    G --> K[AI Reasoning Engine]
-    H --> K
-    I --> K
-    J --> K
+    O & S & G & CO --> P[Remediation Planner]
+    P --> T[Digital Twin Simulator]
+    T --> OPA[OPA policy pre-check]
+    P --> M[Incident memory]
+    P --> AI[LLM Reasoning Engine]
+    M --> AI
 
-    K --> L[Remediation Planner]
-    L --> M[Digital Twin Simulation]
-    M --> N[OPA Policy Validation]
-    N --> O[GitOps Pull Request Generator]
-    O --> P[CI/CD Validation]
-    P --> Q[ArgoCD / Kubernetes Deployment]
+    AI --> AN[IncidentAnalysis]
+    AN --> PR[GitHub draft PR]
+    PR --> CD[ArgoCD / Kubernetes]
+
+    API -.-> MET[Prometheus /metrics]
+    API -.-> OTL[OTLP tracing]
 ```
 
 ---
 
-# Repository Structure
+## Local quickstart
 
-```text
-aegisforge/
-├── apps/
-│   ├── api/
-│   ├── agents/
-│   └── frontend/
-├── infra/
-│   ├── kubernetes/
-│   └── terraform/
-├── charts/
-├── security/
-├── simulation/
-├── docs/
-├── examples/
-└── .github/workflows/
-```
-
----
-
-# Local Quickstart
-
-## Start the API
+### 1. API + dashboard
 
 ```bash
+# API
 cd apps/api
-
-python -m venv .venv
-
-# Linux/macOS
-source .venv/bin/activate
-
-# Windows Git Bash
-source .venv/Scripts/activate
-
+python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+uvicorn aegisforge.main:app --reload
+# -> http://localhost:8000/docs
 
+# Frontend
+cd apps/frontend
+npm install
+npm run dev
+# -> http://localhost:5173
+```
+
+### 2. Fire the demo events
+
+```bash
+./scripts/demo.sh
+```
+
+### 3. Wire in real Anthropic reasoning
+
+```bash
+export AEGIS_LLM_PROVIDER=anthropic
+export AEGIS_ANTHROPIC_API_KEY=sk-ant-...
+pip install -e "apps/api[llm]"
 uvicorn aegisforge.main:app --reload
 ```
 
-Open:
+Then re-run the demo - `llm_provider` in the response will switch from `mock` to `anthropic` and the `executive_summary` / `root_cause_hypothesis` will be model output grounded in the agent findings and similar incidents.
 
-```text
-http://localhost:8000/docs
-```
-
----
-
-# Run Tests
+### 4. Open a real (draft) pull request
 
 ```bash
-cd apps/api
-pytest -v
+export AEGIS_GITHUB_TOKEN=ghp_...
+export AEGIS_GITHUB_REPOSITORY=mikegyim/aegisforge-infra
+export AEGIS_GITHUB_DRY_RUN=false
+curl -X POST http://localhost:8000/incidents/<incident_id>/pull-request
 ```
 
 ---
 
-# Example Event
+## Tests and CI
 
 ```bash
-curl -X POST http://localhost:8000/events \
-  -H "Content-Type: application/json" \
-  -d @../../examples/events/node-memory-pressure.json
+cd apps/api && pytest -q          # unit + integration
+cd apps/agents && pytest -q       # worker queue
+helm lint charts/aegisforge
+terraform -chdir=infra/terraform/aws fmt -check && terraform -chdir=infra/terraform/aws init -backend=false && terraform -chdir=infra/terraform/aws validate
+conftest verify --policy security/policies
+```
+
+CI runs all of the above plus `bandit` (SAST) and `trivy` (image scan).
+
+---
+
+## Deploying
+
+### Docker
+
+```bash
+docker build -t aegisforge:0.2.0 .
+docker run -p 8000:8000 aegisforge:0.2.0
+```
+
+### Helm
+
+```bash
+kubectl create namespace aegisforge
+kubectl -n aegisforge create secret generic aegisforge-secrets \
+  --from-literal=anthropic_api_key=$AEGIS_ANTHROPIC_API_KEY \
+  --from-literal=github_token=$GITHUB_TOKEN \
+  --from-literal=api_key=$AEGIS_API_KEY
+helm upgrade --install aegisforge charts/aegisforge -n aegisforge
+```
+
+### AWS (Terraform)
+
+```bash
+cd infra/terraform/aws
+terraform init && terraform apply
+# Outputs: cluster_name, cluster_endpoint, ecr_repository_url, irsa_role_arn
 ```
 
 ---
 
-# Example AI Incident Workflow
+## Why this project exists
 
-1. Infrastructure event enters control plane
-2. Event is routed through specialized AI agents
-3. AI reasoning engine generates root-cause analysis
-4. Remediation planner proposes infrastructure fix
-5. Digital twin simulator estimates blast radius
-6. OPA/Gatekeeper policies validate remediation
-7. GitOps pull request is generated
-8. CI/CD validates infrastructure changes
-9. Approved deployment syncs to Kubernetes
+Most "AI for SRE" demos stop at "LLM summarizes an alert". AegisForge tries to
+answer the harder question: **how do you let an LLM propose infrastructure
+changes without letting it touch anything dangerous?**
 
----
-
-# Future Roadmap
-
-- [x] API control plane
-- [x] Agent orchestration framework
-- [x] AI reasoning abstraction
-- [x] Kubernetes simulation engine
-- [x] Terraform scaffolding
-- [x] Kubernetes manifests
-- [x] GitHub Actions CI/CD
-- [ ] LangGraph multi-agent workflows
-- [ ] pgvector incident memory
-- [ ] OpenAI + Bedrock production providers
-- [ ] Falco runtime integration
-- [ ] Prometheus live metric ingestion
-- [ ] ArgoCD pull request automation
-- [ ] React topology dashboard
-- [ ] Real-time infrastructure graph visualization
-- [ ] Autonomous remediation approval workflows
+The answer here is a chain of cheap deterministic checks - rule-based agents,
+a digital twin, an OPA pre-check, a draft PR with a rollback plan - wrapped
+around a single grounded LLM call. The result is reviewable by a human in the
+same way any other infrastructure change is.
 
 ---
 
-# Why This Project Exists
+## Resume bullet
 
-Most infrastructure tools stop at monitoring and alerting.
-
-AegisForge explores what comes next:
-
-- AI-assisted infrastructure reasoning
-- Autonomous remediation systems
-- Simulation-based deployment safety
-- Distributed AI operational agents
-- Cloud-native AI control planes
-
-The goal is to demonstrate how AI can augment SRE, DevSecOps, and Kubernetes operations workflows without removing human oversight.
+> Built AegisForge, an autonomous AI cloud-ops control plane: FastAPI +
+> multi-agent inspection, LLM-grounded incident reasoning with SQLite memory,
+> digital-twin blast-radius simulation, OPA policy pre-check, and PyGithub
+> draft-PR generation. Helm-packaged, EKS-deployable via Terraform, observable
+> via Prometheus + OTLP, CI-tested with ruff / bandit / trivy / conftest.
 
 ---
 
-# Resume Bullet
+## License
 
-> Built AegisForge, an autonomous AI cloud operations and defense platform using FastAPI, Kubernetes, Terraform, Helm, AI agents, policy validation, simulation-based remediation, and GitOps-style infrastructure automation workflows.
-
----
-
-# License
-
-MIT License © 2026 Michael Opoku-Gyimah
+MIT © 2026 Michael Opoku-Gyimah

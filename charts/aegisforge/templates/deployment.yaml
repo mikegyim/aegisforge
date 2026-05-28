@@ -2,24 +2,83 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Chart.Name }}-api
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/component: api
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}-api
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/component: api
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}-api
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
     spec:
+      serviceAccountName: {{ .Chart.Name }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 8000
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
           env:
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
-              value: "{{ $value }}"
+              value: {{ $value | quote }}
             {{- end }}
+            {{- if .Values.existingSecret }}
+            - name: AEGIS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: api_key
+                  optional: true
+            - name: AEGIS_ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: anthropic_api_key
+                  optional: true
+            - name: AEGIS_GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: github_token
+                  optional: true
+            {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          emptyDir: {}

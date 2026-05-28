@@ -1,8 +1,26 @@
 services:
   api:
     build: .
+    image: aegisforge:dev
     ports:
       - "8000:8000"
     environment:
-      ENVIRONMENT: local
-      LLM_PROVIDER: mock
+      AEGIS_ENVIRONMENT: local
+      AEGIS_LLM_PROVIDER: ${AEGIS_LLM_PROVIDER:-mock}
+      AEGIS_ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AEGIS_OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AEGIS_API_KEY: ${AEGIS_API_KEY:-}
+      AEGIS_GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      AEGIS_GITHUB_REPOSITORY: ${AEGIS_GITHUB_REPOSITORY:-}
+      AEGIS_GITHUB_DRY_RUN: "true"
+      AEGIS_DATABASE_URL: sqlite+aiosqlite:////data/aegisforge.db
+    volumes:
+      - aegis-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://127.0.0.1:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  aegis-data: {}

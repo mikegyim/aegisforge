@@ -2,5 +2,13 @@ apiVersion: v2
 name: aegisforge
 description: Autonomous AI cloud operations and defense platform
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.2.0
+appVersion: "0.2.0"
+keywords:
+  - ai
+  - sre
+  - devsecops
+  - kubernetes
+maintainers:
+  - name: Michael Opoku-Gyimah
+    url: https://github.com/mikegyim

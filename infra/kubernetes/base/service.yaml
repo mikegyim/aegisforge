@@ -1,11 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: aegisforge-api
+  name: aegisforge
 spec:
-  selector:
-    app: aegisforge-api
+  type: ClusterIP
   ports:
     - port: 80
-      targetPort: 8000
-  type: ClusterIP
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: aegisforge
+    app.kubernetes.io/component: api

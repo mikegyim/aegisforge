@@ -1,3 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: aegisforge
 resources:
+  - namespace.yaml
+  - serviceaccount.yaml
   - deployment.yaml
   - service.yaml
+commonLabels:
+  app.kubernetes.io/name: aegisforge
+  app.kubernetes.io/part-of: aegisforge
