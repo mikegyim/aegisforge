@@ -64,4 +64,4 @@ ignore = ["S101","S104"]
 "tests/*" = ["S","B"]
 
 [tool.bandit]
-exc
+exclude_dirs = ["tests", ".venv"]
