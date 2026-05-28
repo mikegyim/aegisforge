@@ -19,6 +19,7 @@ from typing import Any
 from sqlalchemy import JSON, DateTime, Float, Integer, String, Text, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.pool import StaticPool
 
 from .models import IncidentAnalysis, SimilarIncident, utcnow
 
@@ -78,7 +79,15 @@ class IncidentMemory:
         # Allow callers to pass a sync URL; normalize to aiosqlite
         if database_url.startswith("sqlite:///") and "+aiosqlite" not in database_url:
             database_url = database_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
-        self._engine = create_async_engine(database_url, future=True)
+
+        # For in-memory SQLite, each new connection is a fresh DB. Pin a
+        # single shared connection via StaticPool so tables persist across
+        # sessions (this is what makes the test fixtures work).
+        engine_kwargs: dict[str, Any] = {"future": True}
+        if ":memory:" in database_url:
+            engine_kwargs["poolclass"] = StaticPool
+            engine_kwargs["connect_args"] = {"check_same_thread": False}
+        self._engine = create_async_engine(database_url, **engine_kwargs)
         self._session: async_sessionmaker[AsyncSession] = async_sessionmaker(
             self._engine, expire_on_commit=False
         )

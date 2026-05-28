@@ -45,11 +45,17 @@ class EventQueue:
         if evt.attempts >= max_attempts:
             self._dead_letter.append(evt)
             log.warning("event_dead_lettered attempts=%s error=%s", evt.attempts, error)
-        else:
-            asyncio.get_event_loop().call_later(
-                min(2 ** evt.attempts, 30),
-                lambda: asyncio.ensure_future(self._queue.put(evt)),
-            )
+            return
+
+        async def _requeue() -> None:
+            await asyncio.sleep(min(2 ** evt.attempts, 30))
+            await self._queue.put(evt)
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(_requeue())
+        except RuntimeError:
+            self._queue.put_nowait(evt)
 
     @property
     def dead_letter(self) -> list[QueuedEvent]:

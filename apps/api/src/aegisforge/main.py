@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import Depends, FastAPI, HTTPException, Request
-from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import make_asgi_app
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -99,9 +99,12 @@ def create_app() -> FastAPI:
     async def _ratelimit_handler(_request: Request, exc: RateLimitExceeded):
         return JSONResponse(status_code=429, content={"detail": f"rate limit exceeded: {exc}"})
 
-    # Metrics + tracing
+    # Metrics + tracing. We use prometheus_client.make_asgi_app rather than
+    # prometheus_fastapi_instrumentator's Instrumentator because the latter
+    # registers HTTP collectors in the global REGISTRY and collides when the
+    # test suite creates a second app (e.g. for the API-key test).
     if settings.enable_metrics:
-        Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+        app.mount("/metrics", make_asgi_app(), name="metrics")
     configure_tracing(settings, app)
 
     auth_dep = Depends(require_api_key(settings))
